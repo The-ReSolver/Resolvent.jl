@@ -1,4 +1,4 @@
-name = "Resolvent"
+name = "ResolventAnalysis"
 uuid = "8e664b2d-fea9-4945-a6a3-91764c96093d"
 authors = ["Thomas Burton <tburton5572@gmail.com>"]
 version = "0.1.0"
