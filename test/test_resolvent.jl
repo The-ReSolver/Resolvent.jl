@@ -1,7 +1,7 @@
-@testset "Resolvent at specific mode number" begin
+@testset "Resolvent at specific mode number " begin
 
 end
 
-@testset "Resolvent type construction" begin
+@testset "Resolvent type construction       " begin
     
 end

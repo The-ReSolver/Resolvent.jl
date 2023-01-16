@@ -1,19 +1,19 @@
 # This file contains the utility functions that are useful for the operation
 # of the other code in this module.
 
-struct TruncateSVD{TRUNC<:Int}; end
+struct TruncatedSVD{TRUNC}; end
 struct FullSVD; end
 
-function TruncateSVD(trunc_length::Int)
+function TruncatedSVD(trunc_length::T) where {T<:Integer}
     if trunc_length <= 0
         return FullSVD()
     else
-        return TruncateSVD{trunc_length}()
+        return TruncatedSVD{trunc_length}()
     end
 end
 
 # FIXME: this should be done without having to generate a new SVD object
-function truncate_svd!(svd::SVD, ::TruncateSVD{TRUNC}) where {TRUNC}
+function truncate_svd!(svd::SVD, ::TruncatedSVD{TRUNC}) where {TRUNC}
     U, S, V = svd
     U_trunc = U[:, 1:TRUNC]
     S_trunc = S[1:TRUNC]

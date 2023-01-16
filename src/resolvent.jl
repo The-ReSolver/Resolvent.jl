@@ -10,7 +10,7 @@
 struct Resolvent{SIZE<:NTuple{3, Int}, TRUNC<:Bool, T<:Real, N<:Int}
     res_svd::Array{SVD, N}
 
-    function Resolvent(Hs::AbstractArray{Matrix{Complex{T}}, N}, trunc::TruncateSVD) where {T, N}
+    function Resolvent(Hs::AbstractArray{Matrix{Complex{T}}, N}, trunc::TruncatedSVD) where {T, N}
         new{(size(H[s1], 1), size(Hs)...), true, T, N}(truncate_svd!(svd(Hs), trunc))
     end
 
@@ -28,11 +28,11 @@ function Resolvent(U::AbstractArray{T, 3}, dūdy::Vector{S}, ω::S, β::S, Re::
         Hs[kz, kt] = resolvent_at_k(kt, kz, dūdy, ω, β, Re, Ro, Dy, Dy2)
     end
 
-    Resolvent(Hs, TruncateSVD(trunc))
+    Resolvent(Hs, TruncatedSVD(trunc))
 end
 
 # TODO: test these indexing methods
-Base.getindex(resolvent::Resolvent, i::Int) = resolvent.res_svd[i]
+Base.getindex(resolvent::Resolvent, i::Int) = resolvent.res_svd[i] # ! is this first method required?
 Base.getindex(resolvent::Resolvent, I...) = resolvent.res_svd[I...]
 
 function Base.getproperty(resolvent::Resolvent{SIZE}, sym::Symbol) where {SIZE}

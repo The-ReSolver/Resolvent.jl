@@ -2,6 +2,7 @@ module ResolventAnalysis
 
 using LinearAlgebra
 
+export FullSVD, TruncatedSVD
 export Resolvent
 
 include("utils.jl")
