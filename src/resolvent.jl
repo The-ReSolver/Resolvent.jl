@@ -42,25 +42,11 @@ function Base.getproperty(resolvent::Resolvent{SIZE}, sym::Symbol) where {SIZE}
 
         # loop over mode numbers computing the Resolvent from its SVD
         for kt in 1:SIZE[3], kz in 1:SIZE[2]
-            Hs[kz, kt] = resolvent.res_svd[kz, kt].U*Diagonal(resolvent.res_svd[kz, kt].S)*resolvent.res_svd[kz, kt].Vt
+            Hs[kz, kt] = resolvent[kz, kt].U*Diagonal(resolvent[kz, kt].S)*resolvent[kz, kt].Vt
         end
     else
         return getfield(resolvent, sym)
     end
-end
-
-# TODO: create proper way to access SVD at particular mode number (getter method or iteration?)
-# TODO: redo this function using `getproperty()` method to allow dot syntax to be used (also would that be good for each part of the decomposition)
-function get_resolvent(resolvent::Resolvent{SIZE}) where {SIZE}
-    # initialise matrix of Resolvents
-    Hs = Matrix{Matrix{Complex{T}}}(undef, SIZE[2:3]...)
-
-    # loop over modes numbers computing the Resolvent from its SVD
-    for kt in 1:SIZE[3], kz in 1:SIZE[2]
-        Hs[kz, kt] = resolvent.res_svd[kz, kt].U*Diagonal(resolvent.res_svd[kz, kt].S)*resolvent.res_svd[kz, kt].Vt
-    end
-
-    return Hs
 end
 
 function resolvent_at_k(kt::Int, kz::Int, dūdy::Vector{T}, ω::T, β::T, Re::T, Ro::T, Dy::Matrix{T}, Dy2::Matrix{T}) where {T}
