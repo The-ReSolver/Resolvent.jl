@@ -1,6 +1,7 @@
 # This file contains the type definition for the Resolvent operator, stored in
 # terms of its SVD decomposition.
 
+# TODO: need to create and 'svd()' method for an array of arrays.
 # TODO: find known test case.
 # TODO: test utility functions for the truncation.
 # TODO: implement method to reconstruct Resolvent from the SVD object.
@@ -71,7 +72,7 @@ function resolvent_at_k(kt::Int, kz::Int, dūdy::Vector{T}, ω::T, β::T, Re::T
     H_inv[(3*Ny + 1):end, (2*Ny + 1):(3*Ny)] = -1im*kz*β*I
 
     # initialise mass matrix
-    Z = zeros(Ny, Ny)
+    # Z = zeros(Ny, Ny)
     # M = [I Z Z Z; Z I Z Z; Z Z I Z; Z Z Z Z]
 
     # apply boundary conditions
