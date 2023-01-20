@@ -50,7 +50,7 @@ function Base.getproperty(resolvent::Resolvent{SIZE}, sym::Symbol) where {SIZE}
     end
 end
 
-function resolvent_at_k(kt::Int, kz::Int, dūdy::Vector{T}, ω::T, β::T, Re::T, Ro::T, Dy::Matrix{T}, Dy2::Matrix{T}) where {T}
+function resolvent_at_k(kz::Int, kt::Int, dūdy::Vector{T}, ω::T, β::T, Re::T, Ro::T, Dy::D, Dy2::D) where {T, D<:AbstractMatrix{T}}
     # compute wall-normal discretisation size
     Ny = length(dūdy)
 
@@ -61,19 +61,20 @@ function resolvent_at_k(kt::Int, kz::Int, dūdy::Vector{T}, ω::T, β::T, Re::T
     Δ = Dy2 - I*(kz*β)^2
 
     # fill resolvent matrix
+    # ! the time derivative is negated here for unknown reasons
     H_inv[1:Ny, 1:Ny] = 1im*kt*ω*I - Δ/Re
-    H_inv[1:Ny, (Ny + 1):(2*Ny)] = -Diagonal(dūdy) - I*Ro
-    H_inv[(Ny + 1):(2*Ny), 1:Ny] = I*Ro
+    H_inv[1:Ny, (Ny + 1):(2*Ny)] = Diagonal(dūdy) - I*Ro
+    H_inv[(Ny + 1):(2*Ny), 1:Ny] = I(Ny)*Ro
     H_inv[(Ny + 1):(2*Ny), (Ny + 1):(2*Ny)] = 1im*kt*ω*I - Δ/Re
     H_inv[(Ny + 1):(2*Ny), (3*Ny + 1):end] = Dy
     H_inv[(2*Ny + 1):(3*Ny), (2*Ny + 1):(3*Ny)] = 1im*kt*ω*I - Δ/Re
-    H_inv[(2*Ny + 1):(3*Ny), (3*Ny + 1):end] = 1im*kz*β*I
+    H_inv[(2*Ny + 1):(3*Ny), (3*Ny + 1):end] = 1im*kz*β*I(Ny)
     H_inv[(3*Ny + 1):end, (Ny + 1):(2*Ny)] = -Dy
-    H_inv[(3*Ny + 1):end, (2*Ny + 1):(3*Ny)] = -1im*kz*β*I
+    H_inv[(3*Ny + 1):end, (2*Ny + 1):(3*Ny)] = -1im*kz*β*I(Ny)
 
     # initialise mass matrix
-    # Z = zeros(Ny, Ny)
-    # M = [I Z Z Z; Z I Z Z; Z Z I Z; Z Z Z Z]
+    Z = zeros(Ny, Ny)
+    M = [I Z Z Z; Z I Z Z; Z Z I Z; Z Z Z Z]
 
     # apply boundary conditions
     H_inv[1, :] .= 0.0; H_inv[1, 1] = 1.0
@@ -86,8 +87,7 @@ function resolvent_at_k(kt::Int, kz::Int, dūdy::Vector{T}, ω::T, β::T, Re::T
     M[3*Ny, :] .= 0.0
 
     # invert resolvent and multiply by mass matrix
-    # H = inv(H_inv)*M
-    H = inv(H_inv)[:, 1:(3*Ny)]
+    H = inv(H_inv)*M
 
     return H
 end
