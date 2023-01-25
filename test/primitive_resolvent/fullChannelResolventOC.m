@@ -12,7 +12,7 @@
 % !     - does it matter if the last line of L (continuity) is positive or negative???
 
 % function [RIG,CON,H0,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,kx,kz,omega,N,nsvd,yPD,Atop,Abot)
-function [RIG,CON,H0,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,kx,kz,omega,N,nsvd,yPD,Atop,Abot)
+function [u0,v0,s0W,H0,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,kx,kz,omega,N,nsvd,yPD,Atop,Abot)
 %% Inputs
 % N:    Grid resolution
 % nsvd: Number of singular modes to compute
@@ -80,51 +80,27 @@ yP = Re*y;
 % H0: basic resolvent
 % HC: resolvent accounting for opposition control BC
 
-%% Scale resolvent and perform SVD
-% IW   = sqrtm(diag(dy));
-% iIW  = I/IW;
-% sqW  = [ IW Z Z Z; Z  IW Z Z; Z Z  IW Z; Z Z Z Z];
-% isqW = [iIW Z Z Z; Z iIW Z Z; Z Z iIW Z; Z Z Z Z];
+% Scale resolvent and perform SVD
+IW   = sqrtm(diag(dy));
+iIW  = I/IW;
+sqW  = [ IW Z Z Z; Z  IW Z Z; Z Z  IW Z; Z Z Z Z];
+isqW = [iIW Z Z Z; Z iIW Z Z; Z Z iIW Z; Z Z Z Z];
 
-% % Weighted resolvents
-% H0W = sqW*H0*isqW;
-% HCW = sqW*HC*isqW;
+% Weighted resolvents
+H0W = sqW*H0*isqW;
+HCW = sqW*HC*isqW;
 
-% % Singular value decomposition
-% [u0W,s0W,v0W] = svds(H0W,nsvd); 
-% u0 = isqW*u0W;
-% v0 = isqW*v0W;
-% s0 = diag(s0W);
+% Singular value decomposition
+[u0W,s0W,v0W] = svds(H0W,nsvd); 
+u0 = isqW*u0W;
+v0 = isqW*v0W;
+s0 = diag(s0W);
 
-% [uCW,sCW,vCW] = svds(HCW,nsvd); 
-% uC = isqW*uCW;
-% vC = isqW*vCW;
-% sC = diag(sCW);
-
-% % set phase of first non-zero point based on critical layer
-% if(cP < max(diag(U0)))
-%     ind = find(diag(U0)>cP,1,'first');
-% else
-%     ind = N;
-% end
-% phase_shift = -1i*angle(u0(ind,:));
-% v0 = v0*diag(exp(phase_shift));
-% phase_shift = -1i*angle(uC(ind,:));
-% vC = vC*diag(exp(phase_shift));
-
-% % Because of the l2 norm used to scale the resolvent, we do not have any
-% % pressure data.  Calculate pressure modes using the un-scaled resolvent.
-% u0 = H0*v0;
-% u0 = u0*diag(1./s0);
-% RIG.u = u0;
-% RIG.s = s0;
-% RIG.v = v0;
-
-% uC = HC*vC;
-% uC = uC*diag(1./sC);
-% CON.u = uC;
-% CON.s = sC;
-% CON.v = vC;
-RIG = 0;
-CON = 0;
+% Because of the l2 norm used to scale the resolvent, we do not have any
+% pressure data.  Calculate pressure modes using the un-scaled resolvent.
+u0 = H0*v0;
+u0 = u0*diag(1./s0);
+RIG.u = u0;
+RIG.s = s0;
+RIG.v = v0;
 end

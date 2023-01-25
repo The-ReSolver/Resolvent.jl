@@ -2,22 +2,18 @@
 # terms of its SVD decomposition.
 
 # TODO: need to create and 'svd()' method for an array of arrays.
-# TODO: find known test case.
-# TODO: test utility functions for the truncation.
-# TODO: implement method to reconstruct Resolvent from the SVD object.
-# TODO: implement test for Resolvent operator.
 # TODO: implement test for it's SVD decomposition.
 
 struct Resolvent{SIZE<:NTuple{3, Int}, TRUNC<:Bool, T<:Real, N<:Int}
     res_svd::Array{SVD, N}
 
-    function Resolvent(Hs::AbstractArray{Matrix{Complex{T}}, N}, trunc::TruncateSVD) where {T, N}
-        new{(size(H[s1], 1), size(Hs)...), true, T, N}(truncate_svd!(svd(Hs), trunc))
+    function Resolvent(Hs::AbstractArray{Matrix{Complex{T}}, N}, ws::AbstractVector{T}, trunc::Union{TruncateSVD, FullSVD}) where {T, N}
+        new{(size(H[s1], 1), size(Hs)...), typeof(trunc), T, N}(truncate_svd!(svd.(Hs, cholesky(ws)), trunc))
     end
 
-    function Resolvent(Hs::AbstractArray{Matrix{Complex{T}}, N}, trunc::FullSVD) where {T, N}
-        new{(size(H[s1], 1), size(Hs)...), false, T, N}(truncate_svd!(svd(Hs), trunc))
-    end
+    # function Resolvent(Hs::AbstractArray{Matrix{Complex{T}}, N}, ws::AbstractVector{T}, trunc::FullSVD) where {T, N}
+    #     new{(size(H[s1], 1), size(Hs)...), false, T, N}(truncate_svd!(svd.(Hs, cholesky(ws)), trunc))
+    # end
 end
 
 function Resolvent(U::AbstractArray{T, 3}, dūdy::Vector{S}, ω::S, β::S, Re::S, Ro::S, Dy::Matrix{S}, Dy2::Matrix{S}, trunc::Int=0) where {T, S}
@@ -50,6 +46,7 @@ function Base.getproperty(resolvent::Resolvent{SIZE}, sym::Symbol) where {SIZE}
     end
 end
 
+# TODO: shouldn't I not include the right-most column of `M` since it just keeps around a bunch of zeros in H?
 function resolvent_at_k(kz::Int, kt::Int, dūdy::Vector{T}, ω::T, β::T, Re::T, Ro::T, Dy::D, Dy2::D) where {T, D<:AbstractMatrix{T}}
     # compute wall-normal discretisation size
     Ny = length(dūdy)

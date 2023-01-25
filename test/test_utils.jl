@@ -23,3 +23,42 @@ end
     @test A_notrunc.S == S
     @test A_notrunc.V == V
 end
+
+@testset "Cholesky decomposition of weights " begin
+    # generate weights
+    N = rand(3:100)
+    ws = chebws(N)
+
+    Z = zeros(N, N)
+    @test cholesky(ws)*cholesky(ws)' ≈ [Diagonal(ws) Z            Z            Z;
+                                        Z            Diagonal(ws) Z            Z;
+                                        Z            Z            Diagonal(ws) Z;
+                                        Z            Z            Z            Z]
+end
+
+@testset "Matrix SVD at specific mode number" begin
+    # generate random flow parameters
+    # Re = rand()*200
+    # nz = rand(1:100)
+    # nt = rand(0:100)
+    # fund_freq = rand()*10
+    # β = rand()*10
+    # N = rand(4:200)
+    # ws = chebws(N)
+    Re = 10.0
+    nz = 1
+    nt = 1
+    fund_freq = 2π
+    β = 1.0
+    N = 10
+    ws = chebws(N)
+
+    # compute Resolvents
+    _, U_sean, S_sean, V_sean = o.quick_example(Re, nz, nt, β, fund_freq, N, 3, nout=4)
+    H_me = ResolventAnalysis.resolvent_at_k(nz, nt, ones(N), fund_freq, β, Re, 0.0, chebdiff(N), chebddiff(N))
+    SVD_me = svd(H_me, cholesky(ws))
+
+    # @test U_sean ≈ SVD_me.U
+    # @test S_sean ≈ SVD_me.S
+    # @test V_sean ≈ SVD_me.V
+end
