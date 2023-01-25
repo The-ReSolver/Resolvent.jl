@@ -23,16 +23,25 @@ function truncate_svd!(svd::SVD, ::TruncateSVD{TRUNC}) where {TRUNC}
 end
 
 function LinearAlgebra.cholesky(ws::AbstractVector)
-    chol = Diagonal(sqrt.(ws))
+    chol = Diagonal(sqrt.(ws)); chol_inv = Diagonal(sqrt.(1 ./ ws))
     Z = zeros(length(ws), length(ws))
-    return [chol Z Z Z; Z chol Z Z; Z Z chol Z; Z Z Z Z]
+    L =    [chol Z    Z    Z;
+            Z    chol Z    Z;
+            Z    Z    chol Z;
+            Z    Z    Z    Z]
+    L_inv =    [chol_inv Z        Z        Z;
+                Z        chol_inv Z        Z;
+                Z        Z        chol_inv Z;
+                Z        Z        Z        Z]
+    return L, L_inv
 end
 
 # ! the in-place operations may not play nice
-function LinearAlgebra.svd(H::AbstractMatrix{Complex{T}}, L::AbstractMatrix{T}) where {T<:Real}
+function LinearAlgebra.svd(H::Matrix{Complex{T}}, L::Matrix{T}) where {T<:Real}
     L_inv = inv(L)
     SVD = LinearAlgebra.svd(L*H*L_inv)
-    LinearAlgebra.mul!(SVD.U, L_inv, SVD.U)
-    LinearAlgebra.mul!(SVD.Vt, SVD.Vt, L_inv)
+    display(round.(SVD.S; digits=5))
+    # LinearAlgebra.mul!(SVD.U, L_inv, SVD.U)
+    # LinearAlgebra.mul!(SVD.Vt, SVD.Vt, L_inv)
     return SVD
 end

@@ -12,7 +12,7 @@
 % !     - does it matter if the last line of L (continuity) is positive or negative???
 
 % function [RIG,CON,H0,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,kx,kz,omega,N,nsvd,yPD,Atop,Abot)
-function [u0,v0,s0W,H0,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,kx,kz,omega,N,nsvd,yPD,Atop,Abot)
+function [u0,v0,s0,H0,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,kx,kz,omega,N,nsvd,yPD,Atop,Abot)
 %% Inputs
 % N:    Grid resolution
 % nsvd: Number of singular modes to compute

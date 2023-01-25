@@ -3,6 +3,8 @@ using Test
 using Random
 using LinearAlgebra
 
+using UnicodePlots
+
 # set up the PyCall interface to be able to use Sean's Matlab code directly
 using PyCall
 o = pyimport("oct2py").octave
