@@ -8,11 +8,8 @@
 
 % NOTE: Eventually, modularize each of the cells below
 
-% ! ask Sean both these questions tomorrow:
-% !     - does it matter if the last line of L (continuity) is positive or negative???
-
 % function [RIG,CON,H0,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,kx,kz,omega,N,nsvd,yPD,Atop,Abot)
-function [u0,v0,s0,H0,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,kx,kz,omega,N,nsvd,yPD,Atop,Abot)
+function [u0,v0,s0,H0,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,kx,kz,omega,N,yPD,Atop,Abot)
 %% Inputs
 % N:    Grid resolution
 % nsvd: Number of singular modes to compute
@@ -69,7 +66,7 @@ L  = [L1; L2; L3; L4];
 M = [I Z Z Z; Z I Z Z; Z Z I Z; Z Z Z Z];
 
 % The governing equation reads: (-i*om*M - L) [u;v;w;p] = M [fx;fz;fw;0]
-% ! the original code had the time derivative negated, I need to figure out why!!!
+% NOTE: negative from original code was a result of the desire to study travelling wave solutions (reference frame moving to the right)
 LHS = 1i*omega*M-L;
 RHS = M;
 
@@ -91,16 +88,16 @@ H0W = sqW*H0*isqW;
 HCW = sqW*HC*isqW;
 
 % Singular value decomposition
-[u0W,s0W,v0W] = svds(H0W,nsvd); 
+[u0W,s0W,v0W] = svd(H0W);
 u0 = isqW*u0W;
 v0 = isqW*v0W;
 s0 = diag(s0W);
 
 % Because of the l2 norm used to scale the resolvent, we do not have any
 % pressure data.  Calculate pressure modes using the un-scaled resolvent.
-u0 = H0*v0;
-u0 = u0*diag(1./s0);
-RIG.u = u0;
-RIG.s = s0;
-RIG.v = v0;
+% u0 = H0*v0;
+% u0 = u0*diag(1./s0);
+% RIG.u = u0;
+% RIG.s = s0;
+% RIG.v = v0;
 end
