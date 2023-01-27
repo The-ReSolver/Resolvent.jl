@@ -3,6 +3,7 @@ using Test
 using Random
 using LinearAlgebra
 
+# TODO: remove me
 using UnicodePlots
 
 # set up the PyCall interface to be able to use Sean's Matlab code directly

@@ -23,7 +23,8 @@ function truncate_svd!(svd::SVD, ::TruncateSVD{TRUNC}) where {TRUNC}
 end
 
 function LinearAlgebra.cholesky(ws::AbstractVector)
-    chol = Diagonal(sqrt.(ws)); chol_inv = Diagonal(sqrt.(1 ./ ws))
+    sqrt_ws = sqrt.(ws)
+    chol = Diagonal(sqrt_ws); chol_inv = Diagonal(1 ./ sqrt_ws)
     Z = zeros(length(ws), length(ws))
     L =    [chol Z    Z    Z;
             Z    chol Z    Z;
