@@ -4,7 +4,7 @@
 struct TruncateSVD{TRUNC}; end
 struct FullSVD; end
 
-function TruncateSVD(trunc_length::T) where {T<:Integer}
+function TruncateSVD(trunc_length::Integer)
     if trunc_length <= 0
         return FullSVD()
     else
@@ -12,14 +12,26 @@ function TruncateSVD(trunc_length::T) where {T<:Integer}
     end
 end
 
-truncate_svd!(svd::SVD, ::FullSVD) = svd
-# FIXME: this should be done without having to generate a new SVD object
-function truncate_svd!(svd::SVD, ::TruncateSVD{TRUNC}) where {TRUNC}
+# TODO: try using views to avoid memory allocations
+truncate_svd(svd::SVD, ::FullSVD) = svd
+truncate_svd(svds::Matrix{SVD}, ::FullSVD) = svds
+function truncate_svd(svd::SVD, ::TruncateSVD{TRUNC}) where {TRUNC}
     U, S, V = svd
     U_trunc = U[:, 1:TRUNC]
     S_trunc = S[1:TRUNC]
     V_trunc = V[:, 1:TRUNC]
     return SVD(U_trunc, S_trunc, V_trunc')
+end
+function truncate_svd(svds::Matrix{SVD}, ::TruncateSVD{TRUNC}) where {TRUNC}
+    println("5")
+    svds_truncated = similar(svds)
+
+    println("6")
+    for kt in 1:size(svds, 3), kz in 1:size(svds, 2)
+        svds_truncated = truncate_svd(svds[kz, kt], TruncateSVD(TRUNC))
+    end
+
+    return svds_truncated
 end
 
 function LinearAlgebra.cholesky(ws::AbstractVector)
@@ -53,10 +65,22 @@ function LinearAlgebra.svd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}
     end
 
     # truncate all the exactly zero singular values and return
-    return truncate_svd!(SVD, TruncateSVD(truncate_length))
+    return truncate_svd(SVD, TruncateSVD(truncate_length))
 end
 
-function resolvent_at_k(kz::Int, kt::Int, dūdy::Vector{T}, ω::T, β::T, Re::T, Ro::T, Dy::D, Dy2::D) where {T, D<:AbstractMatrix{T}}
+function LinearAlgebra.svd(Hs::Matrix{Matrix{Complex{T}}}, L::Matrix{T}, L_inv::Matrix{T}) where {T}
+    println("3")
+    SVDs = similar(Hs, LinearAlgebra.SVD)
+
+    println("4")
+    for kt in 1:size(Hs, 3), kz in 1:size(Hs, 2)
+        SVDs[kz, kt] = LinearAlgebra.svd(Hs[kz, kt], L, L_inv)
+    end
+
+    return SVDs
+end
+
+function resolvent_at_k(kz, kt, dūdy, ω, β, Re, Ro, Dy, Dy2, ::Type{T}=Float64) where {T}
     # compute wall-normal discretisation size
     Ny = length(dūdy)
 

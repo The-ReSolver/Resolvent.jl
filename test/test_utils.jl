@@ -10,7 +10,7 @@ end
     trunc_length = rand(1:4)
     A = rand(rand(5:10), rand(5:10))
     U, S, V = svd(A)
-    A_trunc = ResolventAnalysis.truncate_svd!(svd(A), TruncateSVD(trunc_length))
+    A_trunc = ResolventAnalysis.truncate_svd(svd(A), TruncateSVD(trunc_length))
 
     # check SVDs are the same as their individually truncated versions
     @test A_trunc.U == U[:, 1:trunc_length]
@@ -18,7 +18,7 @@ end
     @test A_trunc.Vt == V[:, 1:trunc_length]'
 
     # check when truncation is not positive
-    A_notrunc = ResolventAnalysis.truncate_svd!(svd(A), TruncateSVD(rand(-10:0)))
+    A_notrunc = ResolventAnalysis.truncate_svd(svd(A), TruncateSVD(rand(-10:0)))
     @test A_notrunc.U == U
     @test A_notrunc.S == S
     @test A_notrunc.V == V
@@ -71,7 +71,7 @@ end
     # compute Resolvents
     _, U_sean, S_sean, V_sean = o.quick_example(Re, nz, nt, β, fund_freq, N, nout=4); S_sean = reshape(S_sean, 4*N)
     H_me = ResolventAnalysis.resolvent_at_k(nz, nt, ones(N), fund_freq, β, Re, 0.0, chebdiff(N), chebddiff(N))
-    SVD_me = LinearAlgebra.svd(H_me, cholesky(ws)...)
+    SVD_me = svd(H_me, cholesky(ws)...)
 
     @test abs.(SVD_me.U) ≈ abs.(U_sean[1:3*N, 1:length(SVD_me.S)])
     @test SVD_me.S ≈ S_sean[1:length(SVD_me.S)]
