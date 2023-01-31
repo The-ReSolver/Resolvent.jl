@@ -71,7 +71,7 @@ end
     # compute Resolvents
     _, U_sean, S_sean, V_sean = o.quick_example(Re, nz, nt, β, fund_freq, N, nout=4); S_sean = reshape(S_sean, 4*N)
     H_me = ResolventAnalysis.resolvent_at_k(nz, nt, ones(N), fund_freq, β, Re, 0.0, chebdiff(N), chebddiff(N))
-    SVD_me = svd(H_me, cholesky(ws)...)
+    SVD_me = svd(H_me, ws)
 
     @test abs.(SVD_me.U) ≈ abs.(U_sean[1:3*N, 1:length(SVD_me.S)])
     @test SVD_me.S ≈ S_sean[1:length(SVD_me.S)]

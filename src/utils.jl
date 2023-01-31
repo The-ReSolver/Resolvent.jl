@@ -23,10 +23,8 @@ function truncate_svd(svd::SVD, ::TruncateSVD{TRUNC}) where {TRUNC}
     return SVD(U_trunc, S_trunc, V_trunc')
 end
 function truncate_svd(svds::Matrix{SVD}, ::TruncateSVD{TRUNC}) where {TRUNC}
-    println("5")
     svds_truncated = similar(svds)
 
-    println("6")
     for kt in 1:size(svds, 3), kz in 1:size(svds, 2)
         svds_truncated = truncate_svd(svds[kz, kt], TruncateSVD(TRUNC))
     end
@@ -47,6 +45,7 @@ function LinearAlgebra.cholesky(ws::AbstractVector)
     return L, L_inv
 end
 
+LinearAlgebra.svd(H, ws::AbstractVector) = LinearAlgebra.svd(H, cholesky(ws)...)
 function LinearAlgebra.svd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}) where {T<:Real}
     # perform SVD of norm-complient resolvent
     SVD = LinearAlgebra.svd(L*H*L_inv)
@@ -69,10 +68,8 @@ function LinearAlgebra.svd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}
 end
 
 function LinearAlgebra.svd(Hs::Matrix{Matrix{Complex{T}}}, L::Matrix{T}, L_inv::Matrix{T}) where {T}
-    println("3")
     SVDs = similar(Hs, LinearAlgebra.SVD)
 
-    println("4")
     for kt in 1:size(Hs, 3), kz in 1:size(Hs, 2)
         SVDs[kz, kt] = LinearAlgebra.svd(Hs[kz, kt], L, L_inv)
     end
@@ -128,5 +125,4 @@ end
 # TODO: complete this function so that it takes an SVD object and returns the
 # TODO: left- and right-singular vectors as instances of my mode type, along
 # TODO: with the singular vectors
-function svd2modes(svd::SVD)
-end
+function svd2modes(svd::SVD) end
