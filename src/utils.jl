@@ -124,3 +124,9 @@ function resolvent_at_k(kz, kt, dūdy, ω, β, Re, Ro, Dy, Dy2, ::Type{T}=Float
 
     return H
 end
+
+# TODO: complete this function so that it takes an SVD object and returns the
+# TODO: left- and right-singular vectors as instances of my mode type, along
+# TODO: with the singular vectors
+function svd2modes(svd::SVD)
+end
