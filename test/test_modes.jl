@@ -6,9 +6,12 @@
     @test U_modes isa Vector{ResolventAnalysis.ChannelMode{Float64}}
     @test V_modes isa Vector{ResolventAnalysis.ChannelMode{Float64}}
 
+    U_same = true; V_same = true
     for i in axes(S, 1)
-        @test U_modes[i] == my_svd.U[:, i]
-        @test V_modes[i] == my_svd.V[:, i]
+        U_modes[i] == my_svd.U[:, i] ? nothing : U_same = false
+        V_modes[i] == my_svd.V[:, i] ? nothing : V_same = false
     end
+    @test U_same
+    @test V_same
     @test S == svdvals(my_svd)
 end

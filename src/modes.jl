@@ -39,6 +39,20 @@ Base.setindex!(m::AbstractMode, v, i::Int) = (parent(m)[i] = v)
 function LinearAlgebra.dot(::AbstractMode{<:Any, N}, ::AbstractArray{<:Any, N}) where {N} end
 function LinearAlgebra.dot(::AbstractMode{<:Any, N}, ::AbstractArray{<:Any, M}) where {N, M} end
 
+function svd2modes(svd::SVD{T}, ::Type{M}) where {T, M<:AbstractMode{T}}
+    # initialise vectors to hold the modes of the decomposition
+    U_modes = Vector{M}(undef, size(svd, 1))
+    V_modes = Vector{M}(undef, size(svd, 1))
+
+    # loop over the 
+    for i in 1:length(svd.S)
+        U_modes[i] = M(svd.U[:, i])
+        V_modes[i] = M(svd.Vt[i, :])
+    end
+
+    return U_modes, svd.S, V_modes
+end
+
 """
     project!(   A::AbstractArray{<:Any, N},
                 M::Vector{<:AbstractMode{<:Any, N}},
@@ -57,24 +71,6 @@ end
 
 struct ChannelMode{T<:Number} <: AbstractMode{T, 1}
     mode::Vector{T}
-
-    ChannelMode(mode) = new{eltype(mode)}(mode)
 end
 
-# TODO: add trait dispatch to make it generic for abstract mode input, and then overload with concrete version
-function svd2modes(svd::SVD{T}) where {T}
-    # initialise vectors to hold the modes of the decomposition
-    U_modes = Vector{ChannelMode{T}}(undef, size(svd, 1))
-    V_modes = Vector{ChannelMode{T}}(undef, size(svd, 1))
-
-    # loop over the 
-    for i in 1:length(svd.S)
-        U_modes[i] = ChannelMode(svd.U[:, i])
-        V_modes[i] = ChannelMode(svd.Vt[i, :])
-    end
-
-    return U_modes, svd.S, V_modes
-end
-
-# function svd2modes(svd::SVD{T}, ::Type{<:AbstractMode{T}}) where {T} end
-# svd2modes(svd::SVD{T}) where {T} = svd2modes(svd, ChannelMode{T})
+svd2modes(svd::SVD{T}) where {T} = svd2modes(svd, ChannelMode{T})
