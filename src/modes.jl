@@ -15,15 +15,66 @@
 * It will also be useful to be able to project modes onto each other, mainly
 * for the sake of comparison of the modes generated from different techniques.
 
+* Ultimately this abstract part of this implementation will be moved to the
+* interface package.
+
 * Therefore, the following needs to be implemented in this file:
-*   - an abstract mode type
-*   - projection methods (for both flow fields and other modes) on this abstract type
+*   - an abstract mode type 🟢
+*   - projection methods (for both flow fields and other modes) on this abstract type 
 *   - a similar projection method for a collection of modes (inherits from the abstract method so shouldn't need any concrete implementations)
 *   - a concrete implementation of this for channel flow (restricts us to modes as a wall-normal profile)
 *   - a concrete implementation of the projection method
 *   - plotting method for the modes
-
-* Are there other important operations that can be expressed in terms of a few simple abstract operations???
 =#
 
+abstract type AbstractMode{T, N} <: AbstractArray{T, N} end
 
+# array interface stuff
+Base.IndexStyle(::Type{<:AbstractMode}) = IndexLinear()
+Base.parent(m::AbstractMode) = m.mode
+Base.size(m::AbstractMode) = size(parent(m))
+Base.getindex(m::AbstractMode, i::Int) = parent(m)[i]
+Base.setindex!(m::AbstractMode, v, i::Int) = (parent(m)[i] = v)
+
+function LinearAlgebra.dot(::AbstractMode{<:Any, N}, ::AbstractArray{<:Any, N}) where {N} end
+function LinearAlgebra.dot(::AbstractMode{<:Any, N}, ::AbstractArray{<:Any, M}) where {N, M} end
+
+"""
+    project!(   A::AbstractArray{<:Any, N},
+                M::Vector{<:AbstractMode{<:Any, N}},
+                U::AbstractArray{<:Any, N}) -> A
+
+Compute the projection of a field onto a set of modes.
+"""
+function project!(A::AbstractArray{<:Any, N}, M::Vector{<:AbstractMode{<:Any, N}}, U::AbstractArray{<:Any, N}) where {N}
+    # project the U onto each mode and assign result to element of A
+    for (i, mode) in enumerate(M)
+        A[i] = LinearAlgebra.dot(mode, U)
+    end
+
+    return A
+end
+
+struct ChannelMode{T<:Number} <: AbstractMode{T, 1}
+    mode::Vector{T}
+
+    ChannelMode(mode) = new{eltype(mode)}(mode)
+end
+
+# TODO: add trait dispatch to make it generic for abstract mode input, and then overload with concrete version
+function svd2modes(svd::SVD{T}) where {T}
+    # initialise vectors to hold the modes of the decomposition
+    U_modes = Vector{ChannelMode{T}}(undef, size(svd, 1))
+    V_modes = Vector{ChannelMode{T}}(undef, size(svd, 1))
+
+    # loop over the 
+    for i in 1:length(svd.S)
+        U_modes[i] = ChannelMode(svd.U[:, i])
+        V_modes[i] = ChannelMode(svd.Vt[i, :])
+    end
+
+    return U_modes, svd.S, V_modes
+end
+
+# function svd2modes(svd::SVD{T}, ::Type{<:AbstractMode{T}}) where {T} end
+# svd2modes(svd::SVD{T}) where {T} = svd2modes(svd, ChannelMode{T})

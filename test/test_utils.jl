@@ -77,7 +77,3 @@ end
     @test SVD_me.S ≈ S_sean[1:length(SVD_me.S)]
     @test abs.(SVD_me.V) ≈ abs.(V_sean[1:3*N, 1:length(SVD_me.S)])
 end
-
-@testset "Converting SVD to mode types      " begin
-
-end
