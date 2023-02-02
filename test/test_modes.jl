@@ -1,7 +1,7 @@
 @testset "Converting SVD to mode types      " begin
     # convert to vectors of modes
     my_svd = svd(rand(rand(1:10), rand(1:10)))
-    U_modes, S, V_modes = ResolventAnalysis.svd2modes(my_svd)
+    U_modes, S, V_modes = ResolventAnalysis.svd2modes(my_svd, ones(Float64, size(my_svd, 1)))
 
     @test U_modes isa Vector{ResolventAnalysis.ChannelMode{Float64}}
     @test V_modes isa Vector{ResolventAnalysis.ChannelMode{Float64}}

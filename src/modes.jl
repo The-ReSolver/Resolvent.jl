@@ -39,27 +39,20 @@ Base.setindex!(m::AbstractMode, v, i::Int) = (parent(m)[i] = v)
 function LinearAlgebra.dot(::AbstractMode{<:Any, N}, ::AbstractArray{<:Any, N}) where {N} end
 function LinearAlgebra.dot(::AbstractMode{<:Any, N}, ::AbstractArray{<:Any, M}) where {N, M} end
 
-function svd2modes(svd::SVD{T}, ::Type{M}) where {T, M<:AbstractMode{T}}
+function svd2modes(svd::SVD{T}, ws::AbstractArray{<:AbstractFloat, N}, ::Type{M}) where {T, N, M<:AbstractMode{T, N}}
     # initialise vectors to hold the modes of the decomposition
     U_modes = Vector{M}(undef, size(svd, 1))
     V_modes = Vector{M}(undef, size(svd, 1))
 
     # loop over the 
     for i in 1:length(svd.S)
-        U_modes[i] = M(svd.U[:, i])
-        V_modes[i] = M(svd.Vt[i, :])
+        U_modes[i] = M(svd.U[:, i], ws)
+        V_modes[i] = M(svd.Vt[i, :], ws)
     end
 
     return U_modes, svd.S, V_modes
 end
 
-"""
-    project!(   A::AbstractArray{<:Any, N},
-                M::Vector{<:AbstractMode{<:Any, N}},
-                U::AbstractArray{<:Any, N}) -> A
-
-Compute the projection of a field onto a set of modes.
-"""
 function project!(A::AbstractArray{<:Any, N}, M::Vector{<:AbstractMode{<:Any, N}}, U::AbstractArray{<:Any, N}) where {N}
     # project the U onto each mode and assign result to element of A
     for (i, mode) in enumerate(M)
@@ -71,6 +64,7 @@ end
 
 struct ChannelMode{T<:Number} <: AbstractMode{T, 1}
     mode::Vector{T}
+    ws::Vector{Float64}
 end
 
-svd2modes(svd::SVD{T}) where {T} = svd2modes(svd, ChannelMode{T})
+svd2modes(svd::SVD{T}, ws::Vector{Float64}) where {T} = svd2modes(svd, ws, ChannelMode{T})
