@@ -2,32 +2,25 @@
 # (probably to moved to the interface package at a later date) which defines
 # the basis to express flows upon.
 
-#=
-* A mode is simply a function onto which a flow field can be projected onto.
+# -----------------------------------------------------------------------------
+# Abstract interface for modes and projection
+# -----------------------------------------------------------------------------
 
-* The goal of any mode type is to provide this basic functionality, not only
-* for a single mode, but for collection of modes forming a basis (a simple
-* vector would do for this for any flow type).
+# To properly create a concrete implementation of the abstract modes interface
+# the followsing objects have to be defined:
+#   - Subtype of AbstractMode with fields for the mode data and the quadrature
+#       weights;
+#   - LinearAlgebra.dot method for projection of your desired field and a single
+#       mode;
 
-* This can be expressed abstractly, thus allowing a consistent interface to be
-* defined for all the modal analysis techniques used.
+# The following are optional:
+#   - weights method to extract the quadrature weights array. Default behaviour
+#       assumes that the weights are stored as a field of the modes, but
+#       overloading this method allows for other approaches.
+#   - ModeDimension constructor to determine which dimension to modes operate
+#       on
 
-* It will also be useful to be able to project modes onto each other, mainly
-* for the sake of comparison of the modes generated from different techniques.
-
-* Ultimately this abstract part of this implementation will be moved to the
-* interface package.
-
-* Therefore, the following needs to be implemented in this file:
-*   - an abstract mode type 🟢
-*   - projection methods (for both flow fields and other modes) on this abstract type 
-*   - a similar projection method for a collection of modes (inherits from the abstract method so shouldn't need any concrete implementations)
-*   - a concrete implementation of this for channel flow (restricts us to modes as a wall-normal profile)
-*   - a concrete implementation of the projection method
-*   - plotting method for the modes
-=#
-
-abstract type AbstractMode{T, N} <: AbstractArray{T, N} end
+abstract type AbstractMode{N, T} <: AbstractArray{T, N} end
 
 # array interface stuff
 Base.IndexStyle(::Type{<:AbstractMode}) = IndexLinear()
@@ -36,35 +29,76 @@ Base.size(m::AbstractMode) = size(parent(m))
 Base.getindex(m::AbstractMode, i::Int) = parent(m)[i]
 Base.setindex!(m::AbstractMode, v, i::Int) = (parent(m)[i] = v)
 
-function LinearAlgebra.dot(::AbstractMode{<:Any, N}, ::AbstractArray{<:Any, N}) where {N} end
-function LinearAlgebra.dot(::AbstractMode{<:Any, N}, ::AbstractArray{<:Any, M}) where {N, M} end
+weights(M::AbstractMode) = M.ws
 
-function svd2modes(svd::SVD{T}, ws::AbstractArray{<:AbstractFloat, N}, ::Type{M}) where {T, N, M<:AbstractMode{T, N}}
-    # initialise vectors to hold the modes of the decomposition
-    U_modes = Vector{M}(undef, size(svd, 1))
-    V_modes = Vector{M}(undef, size(svd, 1))
+# * projection of single profile onto single mode
+LinearAlgebra.dot(M::AbstractMode{N}, U::AbstractArray{<:Any, N}) where {N} = throw(MethodError(LinearAlgebra.dot, (M, U)))
 
-    # loop over the 
-    for i in 1:length(svd.S)
-        U_modes[i] = M(svd.U[:, i], ws)
-        V_modes[i] = M(svd.Vt[i, :], ws)
-    end
+# * projection of single profile onto set of modes (basis functions)
+project!(A::AbstractVector, M::AbstractVector{<:AbstractMode{N}}, U::AbstractArray{<:Any, N}) where {N} = broadcast!(mode->dot(mode, U), A, M)
 
-    return U_modes, svd.S, V_modes
-end
-
-function project!(A::AbstractArray{<:Any, N}, M::Vector{<:AbstractMode{<:Any, N}}, U::AbstractArray{<:Any, N}) where {N}
-    # project the U onto each mode and assign result to element of A
-    for (i, mode) in enumerate(M)
-        A[i] = LinearAlgebra.dot(mode, U)
+# * projection of a profile for every wavenumber pair onto a set of modes for each wavenumber pair
+function project!(A::AbstractArray, modes::AbstractArray{M}, U::AbstractArray) where {N, M<:AbstractVector{<:AbstractMode{N}}}
+    @views for I in CartesianIndices(size(A)[2:end])
+        project!(A[:, I], modes[I], U[[Colon() for _ in 1:N]..., I])
     end
 
     return A
 end
 
-struct ChannelMode{T<:Number} <: AbstractMode{T, 1}
+function test_modeinterface(mode::AbstractMode)
+    # test the weights extraction is well defined
+    try
+        weights(mode)
+    catch e
+        throw(e)
+    end
+
+    # test the dot product produces a well defined output
+    @assert dot(mode, similar(parent(mode))) isa Number "Inner-product does not output single number as output!"
+end
+
+# * the only way to improve this is to provide some way of knowing which dimensions
+# * to slice over without assumption, maybe this could be stored as some sort of ModeDimension method
+# struct ModeDimensions{N}; dims::NTuple{N, Int}; end
+# function project!(A::AbstractArray, modes::AbstractArray{M}, U::AbstractArray{<:Any, NU}, dims::ModeDimensions{NU}=ModeDimensions(N, NU)) where {NU, N, M<:AbstractVector{<:AbstractMode{N}}} end
+# * The point of the above code is to provide a fallback behaviour for the projection
+# * that assumed the dimensions over which the mode applies are the first `N` dimensions
+# * (so the first `N` dimensions should be sliced and the rest indexed). By overloading
+# * the construction of the ModeDimension object for our concrete type we will be able
+# * to modify this method so that it can slice over any number and order of dimensions
+# * as desired.
+
+# -----------------------------------------------------------------------------
+# Concrete implementation for channel modes
+# -----------------------------------------------------------------------------
+
+struct ChannelMode{T<:Number} <: AbstractMode{1, T}
     mode::Vector{T}
     ws::Vector{Float64}
 end
 
-svd2modes(svd::SVD{T}, ws::Vector{Float64}) where {T} = svd2modes(svd, ws, ChannelMode{T})
+function svd2channelmodes(svd::SVD{T}, ws::AbstractArray{<:AbstractFloat, N}) where {T, N}
+    # initialise vectors to hold the modes of the decomposition
+    U_modes = Vector{ChannelMode{T}}(undef, size(svd, 1))
+    V_modes = Vector{ChannelMode{T}}(undef, size(svd, 1))
+
+    # loop over the 
+    for i in 1:length(svd.S)
+        U_modes[i] = ChannelMode{T}(svd.U[:, i], ws)
+        V_modes[i] = ChannelMode{T}(svd.Vt[i, :], ws)
+    end
+
+    return U_modes, svd.S, V_modes
+end
+
+function LinearAlgebra.dot(mode::ChannelMode, U::AbstractVector)
+    sum = 0
+    for ny in eachindex(mode)
+        sum += weights(mode)[ny]*mode[ny]*U[ny]
+    end
+
+    return sum
+end
+
+# TODO: test the above projection methods for my concrete implementation one-by-one
