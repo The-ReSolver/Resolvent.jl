@@ -48,8 +48,16 @@ function LinearAlgebra.cholesky(ws::AbstractVector)
     return L, L_inv
 end
 
-LinearAlgebra.svd(H::Matrix{Complex{T}}, ws::AbstractVector, nvals::Int=1; alg::LinearAlgebra.Algorithm=DivideAndConquer(), debug::Bool=false) where {T<:Real} = _mysvd(H, cholesky(ws)..., nvals, alg, debug)
-function _mysvd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, nvals::Int, alg::LinearAlgebra.Algorithm, debug::Bool) where {T<:Real}
+LinearAlgebra.svd(H::Matrix{Complex{T}},
+                    ws::AbstractVector,
+                    nvals::Union{Nothing, Int}=nothing;
+                    alg::LinearAlgebra.Algorithm=DivideAndConquer(),
+                    debug::Bool=false) where {T<:Real} = _mysvd(H, cholesky(ws)..., nvals, alg, debug)
+function _mysvd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, nvals::Union{Nothing, Int}, alg::LinearAlgebra.Algorithm, debug::Bool) where {T<:Real}
+    # convert nvals to integer if it is a nothing
+    nvals === nothing ? nvals = lastindex(H, 2) : nothing
+
+    # compute svd
     mySVD = _mysvd(L*H*L_inv, nvals, alg, debug)
 
     # convert the singular vectors back to the original space
