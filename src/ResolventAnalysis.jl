@@ -5,7 +5,9 @@ using LinearAlgebra
 export FullSVD, TruncateSVD
 export svd
 
-export ChannelMode, test_modeinterface
+export DivideAndConquer, QRIteration
+
+export ChannelMode, test_modeinterface, project!
 
 include("utils.jl")
 include("modes.jl")

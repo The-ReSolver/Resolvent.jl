@@ -1,6 +1,11 @@
 # This file contains the utility functions that are useful for the operation
 # of the other code in this module.
 
+# TODO: add method for only a truncated computation of the SVD instead of whole thing to increase stability
+
+const DivideAndConquer = LinearAlgebra.DivideAndConquer
+const QRIteration = LinearAlgebra.QRIteration
+
 struct TruncateSVD{TRUNC}; end
 struct FullSVD; end
 
@@ -12,7 +17,6 @@ function TruncateSVD(trunc_length::Integer)
     end
 end
 
-# TODO: try using views to avoid memory allocations
 truncate_svd(svd::SVD, ::FullSVD) = svd
 truncate_svd(svds::Matrix{SVD}, ::FullSVD) = svds
 function truncate_svd(svd::SVD, ::TruncateSVD{TRUNC}) where {TRUNC}
@@ -45,10 +49,10 @@ function LinearAlgebra.cholesky(ws::AbstractVector)
     return L, L_inv
 end
 
-LinearAlgebra.svd(H, ws::AbstractVector) = LinearAlgebra.svd(H, cholesky(ws)...)
-function LinearAlgebra.svd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}) where {T<:Real}
+LinearAlgebra.svd(H, ws::AbstractVector; alg=DivideAndConquer()) = LinearAlgebra.svd(H, cholesky(ws)..., alg)
+function LinearAlgebra.svd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, alg) where {T<:Real}
     # perform SVD of norm-complient resolvent
-    SVD = LinearAlgebra.svd(L*H*L_inv)
+    SVD = LinearAlgebra.svd(L*H*L_inv; alg=alg)
 
     # convert the singular vectors back to the original space
     LinearAlgebra.mul!(SVD.U, L_inv, copy(SVD.U))
