@@ -1,10 +1,9 @@
 # This file contains the utility functions that are useful for the operation
 # of the other code in this module.
 
-# TODO: add method for only a truncated computation of the SVD instead of whole thing to increase stability
-
 const DivideAndConquer = LinearAlgebra.DivideAndConquer
 const QRIteration = LinearAlgebra.QRIteration
+struct Lanczos <: LinearAlgebra.Algorithm end
 
 struct TruncateSVD{TRUNC}; end
 struct FullSVD; end
@@ -49,23 +48,27 @@ function LinearAlgebra.cholesky(ws::AbstractVector)
     return L, L_inv
 end
 
-LinearAlgebra.svd(H, ws::AbstractVector; alg=DivideAndConquer()) = LinearAlgebra.svd(H, cholesky(ws)..., alg)
-function LinearAlgebra.svd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, alg) where {T<:Real}
-    # perform SVD of norm-complient resolvent
-    SVD = LinearAlgebra.svd(L*H*L_inv; alg=alg)
+LinearAlgebra.svd(H::Matrix{Complex{T}}, ws::AbstractVector, nvals::Int=1; alg::LinearAlgebra.Algorithm=DivideAndConquer(), debug::Bool=false) where {T<:Real} = _mysvd(H, cholesky(ws)..., nvals, alg, debug)
+function _mysvd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, nvals::Int, alg::LinearAlgebra.Algorithm, debug::Bool) where {T<:Real}
+    mySVD = _mysvd(L*H*L_inv, nvals, alg, debug)
 
     # convert the singular vectors back to the original space
-    LinearAlgebra.mul!(SVD.U, L_inv, copy(SVD.U))
-    LinearAlgebra.mul!(SVD.Vt, copy(SVD.Vt), L_inv)
+    LinearAlgebra.mul!(mySVD.U, L_inv, copy(mySVD.U))
+    LinearAlgebra.mul!(mySVD.Vt, copy(mySVD.Vt), L_inv)
+
+    return mySVD
+end
+_mysvd(H::Matrix{Complex{T}}, nvals::Int, ::Lanczos, debug::Bool) where {T<:Real} = ((U, S, V) = tsvd(H, nvals; debug=debug); return SVD(U, S, V'))
+function _mysvd(H::Matrix{Complex{T}}, nvals::Int, alg::LinearAlgebra.Algorithm, ::Bool) where {T<:Real}
+    # compute svd
+    SVD = svd(H; alg)
 
     # loop over singular values until first zero is reached
     truncate_length = length(SVD.S)
     for (i, si) in enumerate(SVD.S)
-        if abs(si) < 1e-12
-            truncate_length = i - 1
-            break
-        end
+        abs(si) < 1e-12 && (truncate_length = i - 1; break)
     end
+    nvals < truncate_length ? truncate_length = nvals : nothing
 
     # truncate all the exactly zero singular values and return
     return truncate_svd(SVD, TruncateSVD(truncate_length))
