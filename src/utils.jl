@@ -4,6 +4,9 @@
 const DivideAndConquer = LinearAlgebra.DivideAndConquer
 const QRIteration = LinearAlgebra.QRIteration
 struct Lanczos <: LinearAlgebra.Algorithm end
+struct Adaptive <: LinearAlgebra.Algorithm end
+
+
 
 struct TruncateSVD{TRUNC}; end
 struct FullSVD; end
@@ -35,6 +38,8 @@ function truncate_svd(svds::Matrix{SVD}, ::TruncateSVD{TRUNC}) where {TRUNC}
     return svds_truncated
 end
 
+
+
 function LinearAlgebra.cholesky(ws::AbstractVector)
     sqrt_ws = sqrt.(ws)
     chol = Diagonal(sqrt_ws); chol_inv = Diagonal(1 ./ sqrt_ws)
@@ -48,11 +53,26 @@ function LinearAlgebra.cholesky(ws::AbstractVector)
     return L, L_inv
 end
 
-LinearAlgebra.svd(H::Matrix{Complex{T}},
-                    ws::AbstractVector,
-                    nvals::Union{Nothing, Int}=nothing;
-                    alg::LinearAlgebra.Algorithm=DivideAndConquer(),
-                    debug::Bool=false) where {T<:Real} = _mysvd(H, cholesky(ws)..., nvals, alg, debug)
+
+
+LinearAlgebra.svd(H::Matrix{Complex{T}}, ws::AbstractVector, nvals::Union{Nothing, Int}=nothing; alg::LinearAlgebra.Algorithm=DivideAndConquer(), debug::Bool=false) where {T<:Real} = _mysvd(H, cholesky(ws)..., nvals, alg, debug)
+
+function _mysvd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, nvals::Union{Nothing, Int}, ::Adaptive, debug::Bool) where {T<: Real}
+    try
+        return _mysvd(H, L, L_inv, nvals, DivideAndConquer(), debug)
+    catch end
+
+    try
+        return _mysvd(H, L, L_inv, nvals, QRIteration(), debug)
+    catch end
+
+    try
+        return _mysvd(H, L, L_inv, nvals, Lanczos(), debug)
+    catch end
+    
+    throw(LinearAlgebra.LAPACKException)
+end
+
 function _mysvd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, nvals::Union{Nothing, Int}, alg::LinearAlgebra.Algorithm, debug::Bool) where {T<:Real}
     # convert nvals to integer if it is a nothing
     nvals === nothing ? nvals = lastindex(H, 2) : nothing
@@ -66,7 +86,9 @@ function _mysvd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, nvals::Un
 
     return mySVD
 end
+
 _mysvd(H::Matrix{Complex{T}}, nvals::Int, ::Lanczos, debug::Bool) where {T<:Real} = ((U, S, V) = tsvd(H, nvals; debug=debug); return SVD(U, S, V'))
+
 function _mysvd(H::Matrix{Complex{T}}, nvals::Int, alg::LinearAlgebra.Algorithm, ::Bool) where {T<:Real}
     # compute svd
     SVD = svd(H; alg)
@@ -91,6 +113,8 @@ function LinearAlgebra.svd(Hs::Matrix{Matrix{Complex{T}}}, L::Matrix{T}, L_inv::
 
     return SVDs
 end
+
+
 
 function resolvent_at_k(kz, kt, dūdy, ω, β, Re, Ro, Dy, Dy2, ::Type{T}=Float64) where {T}
     # compute wall-normal discretisation size

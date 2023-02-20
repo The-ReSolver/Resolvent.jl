@@ -6,7 +6,7 @@ using TSVD
 export FullSVD, TruncateSVD
 export svd
 
-export DivideAndConquer, QRIteration, Lanczos
+export DivideAndConquer, QRIteration, Lanczos, Adaptive
 
 export ChannelMode, test_modeinterface, project!
 
