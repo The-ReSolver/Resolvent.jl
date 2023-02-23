@@ -1,6 +1,6 @@
 %function quick_example
 
-function [H,u,s,v] = quick_example(Re, nz, nt, beta, fund_freq, N)
+function [H,u,s,v] = quick_example(Re, kz, kt, N)
 
 % Re = 186; % Re number
 % kx = 1.5; % streamwise wavenumber
@@ -17,11 +17,7 @@ yPD = [];
 Atop = [];
 Abot = [];
 
-% compute mode number conversions
-kz = beta*nz;
-omega = fund_freq*nt;
-
-[u,v,s,H,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,0,kz,omega,N,yPD,Atop,Abot);
+[u,v,s,H,y,D1,D2,dy,U0] = fullChannelResolventOC(Re,0,kz,kt,N,yPD,Atop,Abot);
 % disp(LHS(1:4, 1:4))
 
 % sigma = RIG.s(1); % first singular value

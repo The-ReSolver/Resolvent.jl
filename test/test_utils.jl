@@ -45,15 +45,13 @@ end
 @testset "Resolvent at specific mode number " begin
     # generate random flow parameters
     Re = rand()*200
-    nz = rand(1:100)
-    nt = rand(0:100)
-    fund_freq = rand()*10
-    β = rand()*10
+    kz = rand()*100
+    kt = rand()*100
     N = rand(4:200)
 
     # compute Resolvents
-    H0 = o.quick_example(Re, nz, nt, β, fund_freq, N, 3)
-    H_me = ResolventAnalysis.resolvent_at_k(nz, nt, ones(N), fund_freq, β, Re, 0.0, chebdiff(N), chebddiff(N))
+    H0 = o.quick_example(Re, kz, kt, N, 3)
+    H_me = ResolventAnalysis.resolvent_at_k(kz, kt, ones(N), Re, 0.0, chebdiff(N), chebddiff(N))
 
     @test H_me ≈ H0[1:4*N, 1:3*N]
 end
@@ -61,16 +59,14 @@ end
 @testset "Matrix SVD at specific mode number" begin
     # generate random flow parameters
     Re = rand()*200
-    nz = rand(1:100)
-    nt = rand(0:100)
-    fund_freq = rand()*10
-    β = rand()*10
+    kz = rand()*100
+    kt = rand()*100
     N = rand(4:200)
     ws = chebws(N)
 
     # compute Resolvents
-    _, U_sean, S_sean, V_sean = o.quick_example(Re, nz, nt, β, fund_freq, N, nout=4); S_sean = reshape(S_sean, 4*N)
-    H_me = ResolventAnalysis.resolvent_at_k(nz, nt, ones(N), fund_freq, β, Re, 0.0, chebdiff(N), chebddiff(N))
+    _, U_sean, S_sean, V_sean = o.quick_example(Re, kz, kt, N, nout=4); S_sean = reshape(S_sean, 4*N)
+    H_me = ResolventAnalysis.resolvent_at_k(kz, kt, ones(N), Re, 0.0, chebdiff(N), chebddiff(N))
     SVD_me = svd(H_me, ws)
 
     @test abs.(SVD_me.U) ≈ abs.(U_sean[1:3*N, 1:length(SVD_me.S)])

@@ -115,8 +115,8 @@ function LinearAlgebra.svd(Hs::Matrix{Matrix{Complex{T}}}, L::Matrix{T}, L_inv::
 end
 
 
-
-function resolvent_at_k(kz, kt, dūdy, ω, β, Re, Ro, Dy, Dy2, ::Type{T}=Float64) where {T}
+# TODO: try replacing with in-place operations and views wherever possible in this function
+function resolvent_at_k(kz, kt, dūdy, Re, Ro, Dy, Dy2, ::Type{T}=Float64) where {T}
     # compute wall-normal discretisation size
     Ny = length(dūdy)
 
@@ -124,19 +124,18 @@ function resolvent_at_k(kz, kt, dūdy, ω, β, Re, Ro, Dy, Dy2, ::Type{T}=Float
     H_inv = zeros(Complex{T}, 4*Ny, 4*Ny)
 
     # compute laplacian operator
-    Δ = Dy2 - I*(kz*β)^2
+    Δ = Dy2 - I*kz^2
 
     # fill resolvent matrix
-    # ! the time derivative is negated here for unknown reasons
-    H_inv[1:Ny, 1:Ny] = 1im*kt*ω*I - Δ/Re
+    H_inv[1:Ny, 1:Ny] = 1im*kt*I - Δ/Re
     H_inv[1:Ny, (Ny + 1):(2*Ny)] = Diagonal(dūdy) - I*Ro
     H_inv[(Ny + 1):(2*Ny), 1:Ny] = I(Ny)*Ro
-    H_inv[(Ny + 1):(2*Ny), (Ny + 1):(2*Ny)] = 1im*kt*ω*I - Δ/Re
+    H_inv[(Ny + 1):(2*Ny), (Ny + 1):(2*Ny)] = 1im*kt*I - Δ/Re
     H_inv[(Ny + 1):(2*Ny), (3*Ny + 1):end] = Dy
-    H_inv[(2*Ny + 1):(3*Ny), (2*Ny + 1):(3*Ny)] = 1im*kt*ω*I - Δ/Re
-    H_inv[(2*Ny + 1):(3*Ny), (3*Ny + 1):end] = 1im*kz*β*I(Ny)
+    H_inv[(2*Ny + 1):(3*Ny), (2*Ny + 1):(3*Ny)] = 1im*kt*I - Δ/Re
+    H_inv[(2*Ny + 1):(3*Ny), (3*Ny + 1):end] = 1im*kz*I(Ny)
     H_inv[(3*Ny + 1):end, (Ny + 1):(2*Ny)] = -Dy
-    H_inv[(3*Ny + 1):end, (2*Ny + 1):(3*Ny)] = -1im*kz*β*I(Ny)
+    H_inv[(3*Ny + 1):end, (2*Ny + 1):(3*Ny)] = -1im*kz*I(Ny)
 
     # initialise mass matrix
     Z = zeros(Ny, Ny)
