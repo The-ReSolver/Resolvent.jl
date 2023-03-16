@@ -1,7 +1,6 @@
 module ResolventAnalysis
 
-using LinearAlgebra
-using TSVD
+using LinearAlgebra, TSVD, Arpack
 
 export FullSVD, TruncateSVD
 export svd

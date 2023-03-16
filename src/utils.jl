@@ -4,6 +4,7 @@
 const DivideAndConquer = LinearAlgebra.DivideAndConquer
 const QRIteration = LinearAlgebra.QRIteration
 struct Lanczos <: LinearAlgebra.Algorithm end
+struct Arnoldi <: LinearAlgebra.Algorithm end
 struct Adaptive <: LinearAlgebra.Algorithm end
 
 
@@ -69,6 +70,10 @@ function _mysvd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, nvals::Un
     try
         return _mysvd(H, L, L_inv, nvals, Lanczos(), debug)
     catch end
+
+    try
+        return _mysvd(H, L, L_inv, nvals, Arnoldi(), debug)
+    catch end
     
     throw(LinearAlgebra.LAPACKException)
 end
@@ -88,6 +93,8 @@ function _mysvd(H::Matrix{Complex{T}}, L::Matrix{T}, L_inv::Matrix{T}, nvals::Un
 end
 
 _mysvd(H::Matrix{Complex{T}}, nvals::Int, ::Lanczos, debug::Bool) where {T<:Real} = ((U, S, V) = tsvd(H, nvals; debug=debug); return SVD(U, S, V'))
+
+_mysvd(H::Matrix{Complex{T}}, nvals::Int, ::Arnoldi, debug::Bool) where {T<:Real} = (svds(H; nsv=nvals, tol=1e-12, maxiter=1000); return SVD(U, S, V'))
 
 function _mysvd(H::Matrix{Complex{T}}, nvals::Int, alg::LinearAlgebra.Algorithm, ::Bool) where {T<:Real}
     # compute svd
@@ -116,6 +123,7 @@ end
 
 
 # TODO: try replacing with in-place operations and views wherever possible in this function
+# TODO: make an in-place method so that arrays to store the results can just be reused
 function resolvent_at_k(kz, kt, dūdy, Re, Ro, Dy, Dy2, ::Type{T}=Float64) where {T}
     # compute wall-normal discretisation size
     Ny = length(dūdy)
@@ -155,6 +163,7 @@ function resolvent_at_k(kz, kt, dūdy, Re, Ro, Dy, Dy2, ::Type{T}=Float64) wher
     M[3*Ny, :] .= 0.0
 
     # invert resolvent and multiply by mass matrix
+    # TODO: replace this with a simple slice of the inverse?
     H = inv(H_inv)*M
 
     return H
