@@ -8,7 +8,6 @@ struct Arnoldi <: LinearAlgebra.Algorithm end
 struct Adaptive <: LinearAlgebra.Algorithm end
 
 
-
 struct TruncateSVD{TRUNC}; end
 struct FullSVD; end
 
@@ -54,6 +53,22 @@ function LinearAlgebra.cholesky(ws::AbstractVector)
     return L, L_inv
 end
 
+
+nuc_norm(H::Matrix) = (S = svd(H).S; return sum(S), S)
+function estimate_rank(H, stop_crit::Float64=0.999)
+    # compute the nuclear norm of the array
+    singsum, singvals = nuc_norm(H)
+
+    # compute the rolling sum only stopping when the total is a large enough proportion of the total sum
+    parsum = singvals[1]
+    rank = 1
+    while parsum < stop_crit*singsum
+        rank += 1
+        parsum += singvals[rank]
+    end
+
+    return rank
+end
 
 
 LinearAlgebra.svd(H::Matrix{Complex{T}}, ws::AbstractVector, nvals::Union{Nothing, Int}=nothing; alg::LinearAlgebra.Algorithm=DivideAndConquer(), debug::Bool=false) where {T<:Real} = _mysvd(H, cholesky(ws)..., nvals, alg, debug)
