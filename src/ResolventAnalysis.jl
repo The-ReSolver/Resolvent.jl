@@ -1,7 +1,6 @@
 module ResolventAnalysis
 
-# TODO: should replace with recipes to avoid heavy dependency (really want to move mode stuff and plotting to interface package)
-using LinearAlgebra, TSVD, Plots
+using LinearAlgebra, TSVD
 
 export FullSVD, TruncateSVD
 export svd
