@@ -92,13 +92,12 @@ function svd2channelmodes(svd::SVD{T}, ws::AbstractArray{<:AbstractFloat, N}) wh
     return U_modes, svd.S, V_modes
 end
 
-function LinearAlgebra.dot(mode::ChannelMode, U::AbstractVector)
-    sum = 0
+# ! assumes the velocity is given as a single vector for all components, need a helper function to flatten a vector field
+function LinearAlgebra.dot(mode::ChannelMode{T}, U::AbstractVector{T}) where {T}
+    sum = zero(T)
     for ny in eachindex(mode)
-        sum += weights(mode)[ny]*mode[ny]*U[ny]
+        sum += weights(mode)[ny]*conj(mode[ny])*U[ny]
     end
 
     return sum
 end
-
-# TODO: test the above projection methods for my concrete implementation one-by-one

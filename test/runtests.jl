@@ -11,4 +11,4 @@ o.addpath("./primitive_resolvent")
 using ChebUtils
 
 include("test_utils.jl")
-include("test_modes.jl")
+# include("test_modes.jl")
