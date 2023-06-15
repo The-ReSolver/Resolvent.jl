@@ -50,7 +50,7 @@ end
     N = rand(4:200)
 
     # compute Resolvents
-    H0 = o.quick_example(Re, kz, kt, N, 3)
+    H0 = o.quick_example(Re, kz, kt, N, nout=1)
     H_me = ResolventAnalysis.resolvent_at_k(kz, kt, ones(N), Re, 0.0, chebdiff(N), chebddiff(N))
 
     @test H_me ≈ H0[1:4*N, 1:3*N]
