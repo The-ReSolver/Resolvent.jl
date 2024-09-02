@@ -9,7 +9,7 @@ export DivideAndConquer, QRIteration, Lanczos, Adaptive
 
 export ChannelMode, test_modeinterface, project!
 
-include("utils.jl")
-# include("modes.jl")
+include("resolvent.jl")
+include("svd.jl")
 
 end
