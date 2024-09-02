@@ -6,7 +6,7 @@ struct Lanczos <: LinearAlgebra.Algorithm end
 struct Arnoldi <: LinearAlgebra.Algorithm end
 struct Adaptive <: LinearAlgebra.Algorithm end
 
-
+# TODO: remove all this complication please!!!
 struct TruncateSVD{TRUNC}; end
 struct FullSVD; end
 
