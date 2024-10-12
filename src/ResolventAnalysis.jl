@@ -2,9 +2,7 @@ module ResolventAnalysis
 
 using LinearAlgebra, TSVD
 
-export Resolvent
-export FullSVD, TruncateSVD
-export svd
+export Resolvent, svd
 
 export DivideAndConquer, QRIteration, Lanczos, Adaptive
 
